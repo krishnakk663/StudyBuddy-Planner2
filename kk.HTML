@@ -1,0 +1,1664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyBuddy Planner | Track Your Progress</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #6c63ff;
+            --secondary: #4cc9f0;
+            --accent: #7209b7;
+            --success: #4ade80;
+            --warning: #facc15;
+            --danger: #f43f5e;
+            --light: #f8f9fa;
+            --dark: #212529;
+            --gray: #6c757d;
+            --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+            --gradient-start: #f5f7fa;
+            --gradient-end: #e4edf5;
+            --yellow-outline: #ffc107;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+            transition: background 0.5s ease;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            padding: 25px 0;
+            margin-bottom: 25px;
+            position: relative;
+        }
+
+        .settings-btn {
+            position: absolute;
+            right: 20px;
+            top: 25px;
+            background: rgba(255, 255, 255, 0.85);
+            border: none;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            z-index: 100;
+        }
+
+        .settings-btn:hover {
+            transform: rotate(30deg);
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.3);
+        }
+
+        .settings-btn svg {
+            width: 20px;
+            height: 20px;
+            fill: var(--primary);
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 10px;
+            font-weight: 800;
+            letter-spacing: -0.5px;
+            text-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .subtitle {
+            color: var(--gray);
+            font-size: 1.2rem;
+            max-width: 600px;
+            margin: 0 auto 15px;
+        }
+
+        .session-warning {
+            background-color: #fff8e6;
+            border-left: 4px solid var(--warning);
+            padding: 12px 20px;
+            border-radius: 0 8px 8px 0;
+            margin: 20px 0;
+            font-size: 0.9rem;
+            color: #5a4a00;
+            box-shadow: var(--card-shadow);
+            max-width: 700px;
+            margin: 15px auto;
+        }
+
+        .planner-container {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .planner-container {
+                grid-template-columns: 380px 1fr;
+            }
+        }
+
+        .add-task-card, .task-list-card, .progress-card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            padding: 25px;
+            transition: var(--transition);
+            margin-bottom: 20px;
+            border: 3px solid var(--yellow-outline);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .progress-card::before {
+            content: "";
+            position: absolute;
+            top: -3px;
+            left: -3px;
+            right: -3px;
+            bottom: -3px;
+            background: linear-gradient(45deg, #ff9a00, #ffcc00, #ffda44, #ffc107);
+            z-index: -1;
+            border-radius: 19px;
+            animation: rotateGradient 8s linear infinite;
+            opacity: 0.7;
+        }
+        
+        @keyframes rotateGradient {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .add-task-card:hover, .task-list-card:hover, .progress-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 6px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f2f5;
+            position: relative;
+        }
+        
+        .card-title::after {
+            content: "";
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--yellow-outline);
+            border-radius: 3px;
+        }
+
+        .card-title h2 {
+            font-size: 1.8rem;
+            color: var(--primary);
+            margin-left: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .card-title svg {
+            width: 28px;
+            height: 28px;
+            fill: var(--secondary);
+            margin-right: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 1rem;
+            transition: var(--transition);
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(108, 99, 255, 0.2);
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .priority-container {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+
+        .priority-option {
+            flex: 1;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 2px solid #e2e8f0;
+            font-weight: 500;
+        }
+
+        .priority-option:hover {
+            transform: translateY(-2px);
+        }
+
+        .priority-option.selected {
+            border-color: var(--primary);
+            background-color: rgba(108, 99, 255, 0.1);
+            font-weight: 600;
+            position: relative;
+        }
+
+        .priority-option.selected::after {
+            content: "✓";
+            position: absolute;
+            bottom: -6px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--primary);
+            color: white;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            font-size: 0.7rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .priority-high {
+            color: var(--danger);
+            border-color: var(--danger);
+        }
+
+        .priority-medium {
+            color: var(--warning);
+            border-color: var(--warning);
+        }
+
+        .priority-low {
+            color: var(--success);
+            border-color: var(--success);
+        }
+
+        .btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 14px 20px;
+            border-radius: 12px;
+            font-size: 1.05rem;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            transition: var(--transition);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.6s;
+        }
+        
+        .btn:hover::after {
+            left: 100%;
+        }
+
+        .btn:hover {
+            background: #5a52e0;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(108, 99, 255, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-delete {
+            background: var(--danger);
+        }
+
+        .btn-delete:hover {
+            background: #e11d48;
+            box-shadow: 0 4px 15px rgba(244, 63, 94, 0.4);
+        }
+
+        .btn-complete {
+            background: var(--success);
+        }
+
+        .btn-complete:hover {
+            background: #81a038;
+            box-shadow: 0 4px 15px rgba(74, 222, 128, 0.4);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: var(--primary);
+            border: 2px solid var(--primary);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary);
+            color: white;
+        }
+
+        .task-section {
+            margin-bottom: 25px;
+        }
+
+        .section-title {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            color: var(--accent);
+            padding-left: 10px;
+            border-left: 4px solid var(--secondary);
+        }
+
+        .task-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .task-card {
+            background: white;
+            border-radius: 14px;
+            padding: 20px;
+            box-shadow: var(--card-shadow);
+            transition: var(--transition);
+            border-left: 4px solid var(--primary);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-card:hover {
+            transform: translateX(5px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .task-card::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--primary);
+        }
+
+        .task-card.priority-high::before {
+            background: var(--danger);
+        }
+
+        .task-card.priority-medium::before {
+            background: var(--warning);
+        }
+
+        .task-card.priority-low::before {
+            background: var(--success);
+        }
+
+        .task-card.completed {
+            opacity: 0.85;
+            border-left-color: var(--success);
+        }
+
+        .task-card.completed::before {
+            background: var(--success);
+        }
+
+        .task-card.completed .task-subject {
+            text-decoration: line-through;
+            color: var(--gray);
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .task-subject {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--dark);
+            flex: 1;
+        }
+
+        .task-due {
+            background: rgba(108, 99, 255, 0.1);
+            color: var(--primary);
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .task-card.priority-high .task-due {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--danger);
+        }
+
+        .task-card.priority-medium .task-due {
+            background: rgba(250, 204, 21, 0.15);
+            color: #926c08;
+        }
+
+        .task-card.priority-low .task-due {
+            background: rgba(74, 222, 128, 0.15);
+            color: #166534;
+        }
+
+        .task-card.completed .task-due {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+        }
+
+        .task-description {
+            margin-bottom: 15px;
+            color: var(--gray);
+            line-height: 1.5;
+            font-size: 0.95rem;
+        }
+
+        .task-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 10px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--gray);
+        }
+
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 15px;
+            color: var(--secondary);
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: white;
+            border-radius: 16px;
+            padding: 15px;
+            margin: 20px 0;
+            box-shadow: var(--card-shadow);
+            flex-wrap: wrap;
+            gap: 15px;
+            border: 2px solid var(--yellow-outline);
+        }
+
+        .stat-item {
+            text-align: center;
+            min-width: 100px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), var(--accent));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+
+        .priority-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+        }
+
+        .priority-indicator.high {
+            background: var(--danger);
+        }
+
+        .priority-indicator.medium {
+            background: var(--warning);
+        }
+
+        .priority-indicator.low {
+            background: var(--success);
+        }
+
+        .chart-container {
+            height: 300px;
+            position: relative;
+            margin-top: 15px;
+        }
+        
+        .detailed-chart-container {
+            height: 350px;
+            position: relative;
+            margin-top: 15px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            box-shadow: 0 10px 50px rgba(0, 0, 0, 0.2);
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.4s ease;
+        }
+
+        .modal.show .modal-content {
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        .modal.show {
+            display: flex;
+        }
+
+        .modal-title {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .modal-title svg {
+            width: 28px;
+            height: 28px;
+            fill: var(--secondary);
+        }
+
+        .color-picker-group {
+            margin: 25px 0;
+        }
+
+        .color-picker-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            gap: 20px;
+        }
+
+        .color-picker-item {
+            text-align: center;
+            flex: 1;
+        }
+
+        .color-picker-label {
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .color-picker {
+            width: 100%;
+            height: 50px;
+            border-radius: 12px;
+            border: none;
+            cursor: pointer;
+            box-shadow: var(--card-shadow);
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 25px;
+            gap: 15px;
+        }
+
+        .modal-buttons .btn {
+            padding: 12px;
+            width: auto;
+            flex: 1;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: var(--gray);
+            transition: var(--transition);
+        }
+
+        .close-modal:hover {
+            color: var(--danger);
+            transform: rotate(90deg);
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 500;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 2000;
+            transform: translateX(150%);
+            transition: transform 0.3s ease;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.success {
+            background: var(--success);
+        }
+
+        .notification.error {
+            background: var(--danger);
+        }
+
+        .notification.warning {
+            background: var(--warning);
+            color: #5a4a00;
+        }
+
+        .task-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px dashed #eee;
+        }
+
+        .task-priority {
+            display: flex;
+            align-items: center;
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+        
+        .growth-indicator {
+            display: inline-block;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+        
+        .growth-positive {
+            background: rgba(74, 222, 128, 0.2);
+            color: var(--success);
+        }
+        
+        .growth-negative {
+            background: rgba(244, 63, 94, 0.15);
+            color: var(--danger);
+        }
+        
+        .current-month {
+            background: rgba(108, 99, 255, 0.15);
+            color: var(--primary);
+            font-weight: 700;
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 12px;
+            margin-left: 8px;
+        }
+        
+        .chart-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .chart-subtitle {
+            color: var(--gray);
+            font-size: 0.95rem;
+            margin-top: 5px;
+        }
+
+        @media (max-width: 991px) {
+            .planner-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .progress-card {
+                order: 3;
+            }
+            
+            h1 {
+                font-size: 2.3rem;
+            }
+            
+            .add-task-card, .task-list-card {
+                padding: 20px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .settings-btn {
+                position: fixed;
+                bottom: 30px;
+                right: 30px;
+                width: 56px;
+                height: 56px;
+                box-shadow: 0 6px 20px rgba(108, 99, 255, 0.4);
+            }
+            
+            .settings-btn svg {
+                width: 28px;
+                height: 28px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .priority-container {
+                flex-direction: column;
+            }
+            
+            .modal-buttons {
+                flex-direction: column;
+            }
+            
+            .modal-buttons .btn {
+                width: 100%;
+            }
+            
+            .chart-container, .detailed-chart-container {
+                height: 250px;
+            }
+        }
+        
+        /* Animation for the yellow border glow */
+        @keyframes borderGlow {
+            0% { box-shadow: 0 0 5px var(--yellow-outline); }
+            50% { box-shadow: 0 0 15px var(--yellow-outline); }
+            100% { box-shadow: 0 0 5px var(--yellow-outline); }
+        }
+        
+        .progress-card {
+            animation: borderGlow 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <button class="settings-btn" id="settingsBtn">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path>
+                </svg>
+            </button>
+            <h1>StudyBuddy Planner</h1>
+            <p class="subtitle">Organize your study sessions, track progress, and ace your exams with our intuitive planner designed just for students!</p>
+            <div class="session-warning">
+                <strong>Note:</strong> This is a demo version. Your study plan is saved only for this session and will reset when you refresh the page.
+            </div>
+        </header>
+
+        <div class="planner-container">
+            <div class="add-task-card">
+                <div class="card-title">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"></path>
+                    </svg>
+                    <h2>Add New Task</h2>
+                </div>
+                <form id="task-form">
+                    <div class="form-group">
+                        <label for="subject">Subject</label>
+                        <input type="text" id="subject" placeholder="e.g., Calculus, Biology, History" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="description">Description</label>
+                        <textarea id="description" placeholder="What do you need to study?"></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="due-date">Due Date</label>
+                        <input type="date" id="due-date" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>Priority Level</label>
+                        <div class="priority-container">
+                            <div class="priority-option selected priority-high" data-priority="high">
+                                High
+                            </div>
+                            <div class="priority-option priority-medium" data-priority="medium">
+                                Medium
+                            </div>
+                            <div class="priority-option priority-low" data-priority="low">
+                                Low
+                            </div>
+                        </div>
+                        <input type="hidden" id="priority" value="high">
+                    </div>
+                    
+                    <button type="submit" class="btn">
+                        <span>+</span> Add Study Task
+                    </button>
+                </form>
+            </div>
+            
+            <div>
+                <div class="task-list-card">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7.75 13.25L6 12l1.41-1.41 3.84 3.84 7.84-7.84L20.5 7.99l-9.25 9.26z"></path>
+                        </svg>
+                        <h2>My Study Plan</h2>
+                    </div>
+                    
+                    <div class="stats-bar">
+                        <div class="stat-item">
+                            <div class="stat-value" id="total-tasks">0</div>
+                            <div class="stat-label">Total Tasks</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="completed-tasks">0</div>
+                            <div class="stat-label">Completed</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="pending-tasks">0</div>
+                            <div class="stat-label">Pending</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-value" id="streak-count">0</div>
+                            <div class="stat-label">Day Streak</div>
+                        </div>
+                    </div>
+                    
+                    <div id="tasks-container">
+                        <div class="task-section">
+                            <h3 class="section-title">Today's Tasks</h3>
+                            <div class="task-list" id="today-tasks">
+                                <div class="empty-state">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                                    </svg>
+                                    <p>No tasks scheduled for today. Add some to get started!</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="task-section">
+                            <h3 class="section-title">Upcoming Tasks</h3>
+                            <div class="task-list" id="upcoming-tasks">
+                                <div class="empty-state">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                                    </svg>
+                                    <p>No upcoming tasks. Plan ahead to stay organized!</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="progress-card">
+                    <div class="card-title">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7.75 13.25L6 12l1.41-1.41 3.84 3.84 7.84-7.84L20.5 7.99l-9.25 9.26z"></path>
+                        </svg>
+                        <h2>Monthly Progress</h2>
+                    </div>
+                    <p style="text-align: center; margin-bottom: 15px; color: var(--gray);">
+                        Track your completed study tasks each month
+                    </p>
+                    <div class="chart-container">
+                        <canvas id="progressChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="progress-card">
+                    <div class="chart-title">
+                        <div class="card-title" style="margin-bottom: 0; padding-bottom: 0; border-bottom: none;">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"></path>
+                            </svg>
+                            <h2>Current Month Progress <span class="current-month" id="current-month-name">July</span></h2>
+                        </div>
+                        <div class="growth-indicator growth-positive" id="growth-indicator">
+                            +25% from last month
+                        </div>
+                    </div>
+                    <p class="chart-subtitle" style="text-align: center; margin-bottom: 15px;">
+                        Daily task completion progress with growth trend
+                    </p>
+                    <div class="detailed-chart-container">
+                        <canvas id="dailyProgressChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <button class="close-modal" id="closeModal">&times;</button>
+            <h3 class="modal-title">
+                <svg viewBox="0 0 24 24">
+                    <path d="M19.43 12.98c.04-.32.07-.64.07-.98s-.03-.66-.07-.98l2.11-1.65c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.3-.61-.22l-2.49 1c-.52-.4-1.08-.73-1.69-.98l-.38-2.65C14.46 2.18 14.25 2 14 2h-4c-.25 0-.46.18-.49.42l-.38 2.65c-.61.25-1.17.59-1.69.98l-2.49-1c-.23-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64l2.11 1.65c-.04.32-.07.65-.07.98s.03.66.07.98l-2.11 1.65c-.19.15-.24.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1c.52.4 1.08.73 1.69.98l.38 2.65c.03.24.24.42.49.42h4c.25 0 .46-.18.49-.42l.38-2.65c.61-.25 1.17-.59 1.69-.98l2.49 1c.23.09.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.65zM12 15.5c-1.93 0-3.5-1.57-3.5-3.5s1.57-3.5 3.5-3.5 3.5 1.57 3.5 3.5-1.57 3.5-3.5 3.5z"></path>
+                </svg>
+                Customize Background
+            </h3>
+            <p style="margin-bottom: 20px; color: var(--gray);">
+                Choose your favorite colors for the background gradient
+            </p>
+            
+            <div class="color-picker-group">
+                <div class="color-picker-container">
+                    <div class="color-picker-item">
+                        <div class="color-picker-label">Gradient Start</div>
+                        <input type="color" class="color-picker" id="colorStart" value="#f5f7fa">
+                    </div>
+                    <div class="color-picker-item">
+                        <div class="color-picker-label">Gradient End</div>
+                        <input type="color" class="color-picker" id="colorEnd" value="#e4edf5">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" id="resetColors">Reset to Default</button>
+                <button class="btn" id="saveColors">Apply Colors</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Notification Element -->
+    <div class="notification" id="notification"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const taskForm = document.getElementById('task-form');
+            const subjectInput = document.getElementById('subject');
+            const descriptionInput = document.getElementById('description');
+            const dueDateInput = document.getElementById('due-date');
+            const priorityInput = document.getElementById('priority');
+            const priorityOptions = document.querySelectorAll('.priority-option');
+            const todayTasksContainer = document.getElementById('today-tasks');
+            const upcomingTasksContainer = document.getElementById('upcoming-tasks');
+            const totalTasksElement = document.getElementById('total-tasks');
+            const completedTasksElement = document.getElementById('completed-tasks');
+            const pendingTasksElement = document.getElementById('pending-tasks');
+            const streakCountElement = document.getElementById('streak-count');
+            const settingsBtn = document.getElementById('settingsBtn');
+            const settingsModal = document.getElementById('settingsModal');
+            const closeModal = document.getElementById('closeModal');
+            const saveColorsBtn = document.getElementById('saveColors');
+            const resetColorsBtn = document.getElementById('resetColors');
+            const colorStartInput = document.getElementById('colorStart');
+            const colorEndInput = document.getElementById('colorEnd');
+            const notification = document.getElementById('notification');
+            const progressChartCanvas = document.getElementById('progressChart').getContext('2d');
+            const dailyProgressChartCanvas = document.getElementById('dailyProgressChart').getContext('2d');
+            const currentMonthNameElement = document.getElementById('current-month-name');
+            const growthIndicatorElement = document.getElementById('growth-indicator');
+            
+            // Initialize tasks array (in-memory storage)
+            let tasks = JSON.parse(sessionStorage.getItem('studyTasks')) || [];
+            let progressChart = null;
+            let dailyProgressChart = null;
+            
+            // Set default due date to today
+            const today = new Date();
+            const formattedDate = today.toISOString().split('T')[0];
+            dueDateInput.value = formattedDate;
+            
+            // Set min date to today
+            dueDateInput.min = formattedDate;
+            
+            // Priority selection handling
+            priorityOptions.forEach(option => {
+                option.addEventListener('click', () => {
+                    // Remove selected class from all options
+                    priorityOptions.forEach(opt => opt.classList.remove('selected'));
+                    
+                    // Add selected class to clicked option
+                    option.classList.add('selected');
+                    
+                    // Update hidden input value
+                    priorityInput.value = option.dataset.priority;
+                });
+            });
+            
+            // Form submission
+            taskForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                
+                // Create new task object
+                const newTask = {
+                    id: Date.now(),
+                    subject: subjectInput.value.trim(),
+                    description: descriptionInput.value.trim(),
+                    dueDate: dueDateInput.value,
+                    priority: priorityInput.value,
+                    completed: false,
+                    createdAt: new Date().toISOString()
+                };
+                
+                // Add to tasks array
+                tasks.unshift(newTask);
+                
+                // Save to session storage
+                sessionStorage.setItem('studyTasks', JSON.stringify(tasks));
+                
+                // Reset form
+                taskForm.reset();
+                dueDateInput.value = formattedDate;
+                
+                // Reset priority selection
+                priorityOptions.forEach(opt => opt.classList.remove('selected'));
+                document.querySelector(`.priority-option[data-priority="high"]`).classList.add('selected');
+                priorityInput.value = 'high';
+                
+                // Re-render tasks and charts
+                renderTasks();
+                renderCharts();
+                
+                // Show success message
+                showNotification('Task added successfully!', 'success');
+            });
+            
+            // Render tasks function
+            function renderTasks() {
+                // Clear containers
+                todayTasksContainer.innerHTML = '';
+                upcomingTasksContainer.innerHTML = '';
+                
+                // Get today and tomorrow dates
+                const todayDate = new Date();
+                todayDate.setHours(0, 0, 0, 0);
+                const tomorrowDate = new Date();
+                tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+                tomorrowDate.setHours(0, 0, 0, 0);
+                
+                // Filter and sort tasks
+                const todayTasks = [];
+                const upcomingTasks = [];
+                
+                tasks.forEach(task => {
+                    const taskDate = new Date(task.dueDate);
+                    taskDate.setHours(0, 0, 0, 0);
+                    
+                    if (taskDate.getTime() === todayDate.getTime()) {
+                        todayTasks.push(task);
+                    } else if (taskDate >= todayDate) {
+                        upcomingTasks.push(task);
+                    }
+                });
+                
+                // Sort tasks by priority and creation date
+                const sortTasks = (a, b) => {
+                    const priorityOrder = { high: 1, medium: 2, low: 3 };
+                    if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
+                        return priorityOrder[a.priority] - priorityOrder[b.priority];
+                    }
+                    return new Date(b.createdAt) - new Date(a.createdAt);
+                };
+                
+                todayTasks.sort(sortTasks);
+                upcomingTasks.sort(sortTasks);
+                
+                // Render today tasks
+                if (todayTasks.length > 0) {
+                    todayTasks.forEach(task => {
+                        todayTasksContainer.appendChild(createTaskElement(task));
+                    });
+                } else {
+                    todayTasksContainer.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            <p>No tasks scheduled for today. Add some to get started!</p>
+                        </div>
+                    `;
+                }
+                
+                // Render upcoming tasks
+                if (upcomingTasks.length > 0) {
+                    upcomingTasks.forEach(task => {
+                        upcomingTasksContainer.appendChild(createTaskElement(task));
+                    });
+                } else {
+                    upcomingTasksContainer.innerHTML = `
+                        <div class="empty-state">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path>
+                            </svg>
+                            <p>No upcoming tasks. Plan ahead to stay organized!</p>
+                        </div>
+                    `;
+                }
+                
+                // Update stats
+                const completedTasks = tasks.filter(task => task.completed).length;
+                const pendingTasks = tasks.length - completedTasks;
+                
+                // Calculate streak (simplified for demo)
+                const todayStr = today.toISOString().split('T')[0];
+                const hasTodayTask = tasks.some(task => 
+                    task.completed && task.dueDate === todayStr
+                );
+                
+                let streak = 0;
+                if (hasTodayTask) {
+                    streak = Math.min(7, Math.floor(Math.random() * 5) + 1); // Random streak for demo
+                }
+                
+                totalTasksElement.textContent = tasks.length;
+                completedTasksElement.textContent = completedTasks;
+                pendingTasksElement.textContent = pendingTasks;
+                streakCountElement.textContent = streak;
+            }
+            
+            // Create task element function
+            function createTaskElement(task) {
+                const taskElement = document.createElement('div');
+                taskElement.className = `task-card priority-${task.priority} ${task.completed ? 'completed' : ''}`;
+                taskElement.dataset.id = task.id;
+                
+                // Format date for display
+                const dueDate = new Date(task.dueDate);
+                const options = { month: 'short', day: 'numeric' };
+                const formattedDueDate = dueDate.toLocaleDateString('en-US', options);
+                
+                // Determine if task is overdue
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const isOverdue = !task.completed && dueDate < today && dueDate.getTime() !== today.getTime();
+                
+                taskElement.innerHTML = `
+                    <div class="task-header">
+                        <div class="task-subject">${escapeHtml(task.subject)}</div>
+                        <div class="task-due ${isOverdue ? 'overdue' : ''}">
+                            ${isOverdue ? 'OVERDUE' : formattedDueDate}
+                        </div>
+                    </div>
+                    <div class="task-description">${task.description ? escapeHtml(task.description) : '<span style="color: var(--gray)">No description</span>'}</div>
+                    <div class="task-footer">
+                        <div class="task-priority">
+                            <span class="priority-indicator ${task.priority}"></span>
+                            ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)} Priority
+                        </div>
+                        <div class="task-actions">
+                            <button class="btn btn-complete" data-id="${task.id}">
+                                ${task.completed ? '✓ Completed' : 'Mark Complete'}
+                            </button>
+                            <button class="btn btn-delete" data-id="${task.id}">Delete</button>
+                        </div>
+                    </div>
+                `;
+                
+                return taskElement;
+            }
+            
+            // Event delegation for task actions
+            document.addEventListener('click', (e) => {
+                if (e.target.classList.contains('btn-complete')) {
+                    const taskId = parseInt(e.target.dataset.id);
+                    toggleTaskCompletion(taskId);
+                }
+                
+                if (e.target.classList.contains('btn-delete')) {
+                    const taskId = parseInt(e.target.dataset.id);
+                    deleteTask(taskId);
+                }
+            });
+            
+            // Toggle task completion
+            function toggleTaskCompletion(taskId) {
+                tasks = tasks.map(task => {
+                    if (task.id === taskId) {
+                        const wasCompleted = task.completed;
+                        const updatedTask = { ...task, completed: !task.completed };
+                        
+                        // Show appropriate notification
+                        if (!wasCompleted && updatedTask.completed) {
+                            showNotification('Great job completing this task!', 'success');
+                        } else {
+                            showNotification('Task marked as incomplete', 'warning');
+                        }
+                        
+                        return updatedTask;
+                    }
+                    return task;
+                });
+                
+                sessionStorage.setItem('studyTasks', JSON.stringify(tasks));
+                renderTasks();
+                renderCharts();
+            }
+            
+            // Delete task
+            function deleteTask(taskId) {
+                const task = tasks.find(t => t.id === taskId);
+                if (confirm(`Are you sure you want to delete "${task.subject}"?`)) {
+                    tasks = tasks.filter(task => task.id !== taskId);
+                    sessionStorage.setItem('studyTasks', JSON.stringify(tasks));
+                    renderTasks();
+                    renderCharts();
+                    showNotification('Task deleted successfully!', 'error');
+                }
+            }
+            
+            // Show notification
+            function showNotification(message, type) {
+                notification.textContent = message;
+                notification.className = `notification ${type}`;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+            
+            // Helper function to escape HTML
+            function escapeHtml(unsafe) {
+                if (!unsafe) return '';
+                return unsafe
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/"/g, "&quot;")
+                    .replace(/'/g, "&#039;");
+            }
+            
+            // Settings modal functionality
+            settingsBtn.addEventListener('click', () => {
+                settingsModal.classList.add('show');
+            });
+            
+            closeModal.addEventListener('click', () => {
+                settingsModal.classList.remove('show');
+            });
+            
+            // Close modal when clicking outside
+            settingsModal.addEventListener('click', (e) => {
+                if (e.target === settingsModal) {
+                    settingsModal.classList.remove('show');
+                }
+            });
+            
+            // Save colors
+            saveColorsBtn.addEventListener('click', () => {
+                const startColor = colorStartInput.value;
+                const endColor = colorEndInput.value;
+                
+                document.documentElement.style.setProperty('--gradient-start', startColor);
+                document.documentElement.style.setProperty('--gradient-end', endColor);
+                
+                // Save to sessionStorage
+                sessionStorage.setItem('bgGradientStart', startColor);
+                sessionStorage.setItem('bgGradientEnd', endColor);
+                
+                settingsModal.classList.remove('show');
+                showNotification('Background colors updated!', 'success');
+            });
+            
+            // Reset colors
+            resetColorsBtn.addEventListener('click', () => {
+                colorStartInput.value = '#f5f7fa';
+                colorEndInput.value = '#e4edf5';
+                document.documentElement.style.setProperty('--gradient-start', '#f5f7fa');
+                document.documentElement.style.setProperty('--gradient-end', '#e4edf5');
+                sessionStorage.removeItem('bgGradientStart');
+                sessionStorage.removeItem('bgGradientEnd');
+                showNotification('Background reset to default!', 'success');
+            });
+            
+            // Load saved colors if available
+            function loadSavedColors() {
+                const savedStart = sessionStorage.getItem('bgGradientStart');
+                const savedEnd = sessionStorage.getItem('bgGradientEnd');
+                
+                if (savedStart && savedEnd) {
+                    document.documentElement.style.setProperty('--gradient-start', savedStart);
+                    document.documentElement.style.setProperty('--gradient-end', savedEnd);
+                    colorStartInput.value = savedStart;
+                    colorEndInput.value = savedEnd;
+                }
+            }
+            
+            // Render both charts
+            function renderCharts() {
+                renderMonthlyChart();
+                renderDailyChart();
+            }
+            
+            // Render monthly progress chart (bar chart)
+            function renderMonthlyChart() {
+                // Destroy existing chart if it exists
+                if (progressChart) {
+                    progressChart.destroy();
+                }
+                
+                // Get completed tasks
+                const completedTasks = tasks.filter(task => task.completed);
+                
+                // Group by month
+                const monthlyData = {};
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                
+                // Initialize all months with 0
+                const currentYear = new Date().getFullYear();
+                for (let i = 0; i < 12; i++) {
+                    monthlyData[monthNames[i]] = 0;
+                }
+                
+                // Count completed tasks by month
+                completedTasks.forEach(task => {
+                    const date = new Date(task.createdAt);
+                    if (date.getFullYear() === currentYear) {
+                        const monthIndex = date.getMonth();
+                        monthlyData[monthNames[monthIndex]]++;
+                    }
+                });
+                
+                // Prepare chart data
+                const labels = Object.keys(monthlyData);
+                const dataValues = Object.values(monthlyData);
+                
+                // Create chart
+                progressChart = new Chart(progressChartCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Completed Tasks',
+                            data: dataValues,
+                            backgroundColor: 'rgba(108, 99, 255, 0.7)',
+                            borderColor: 'rgba(108, 99, 255, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            maxBarThickness: 40
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: `Study Progress ${currentYear}`,
+                                font: {
+                                    size: 16,
+                                    weight: 'bold'
+                                },
+                                color: '#212529'
+                            },
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(108, 99, 255, 0.9)',
+                                titleFont: {
+                                    size: 14
+                                },
+                                bodyFont: {
+                                    size: 13
+                                },
+                                padding: 10,
+                                displayColors: false
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    stepSize: 1
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    display: false
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1000,
+                            easing: 'easeOutQuart'
+                        }
+                    }
+                });
+            }
+            
+            // Render daily progress chart for current month (line chart)
+            function renderDailyChart() {
+                // Destroy existing chart if it exists
+                if (dailyProgressChart) {
+                    dailyProgressChart.destroy();
+                }
+                
+                // Get current month and year
+                const currentDate = new Date();
+                const currentMonth = currentDate.getMonth();
+                const currentYear = currentDate.getFullYear();
+                const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                
+                // Update the current month display
+                currentMonthNameElement.textContent = monthNames[currentMonth];
+                
+                // Get days in current month
+                const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+                
+                // Initialize daily data array
+                const dailyData = Array(daysInMonth).fill(0);
+                
+                // Get completed tasks for current month
+                const completedTasks = tasks.filter(task => {
+                    if (!task.completed) return false;
+                    const taskDate = new Date(task.createdAt);
+                    return taskDate.getMonth() === currentMonth && taskDate.getFullYear() === currentYear;
+                });
+                
+                // Count tasks per day
+                completedTasks.forEach(task => {
+                    const taskDate = new Date(task.createdAt);
+                    const dayOfMonth = taskDate.getDate() - 1; // 0-indexed
+                    if (dayOfMonth >= 0 && dayOfMonth < daysInMonth) {
+                        dailyData[dayOfMonth]++;
+                    }
+                });
+                
+                // Calculate cumulative data for growth visualization
+                const cumulativeData = [...dailyData];
+                for (let i = 1; i < cumulativeData.length; i++) {
+                    cumulativeData[i] += cumulativeData[i-1];
+                }
+                
+                // Calculate growth percentage compared to previous month
+                const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+                const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+                
+                const prevMonthTasks = tasks.filter(task => {
+                    if (!task.completed) return false;
+                    const taskDate = new Date(task.createdAt);
+                    return taskDate.getMonth() === prevMonth && taskDate.getFullYear() === prevYear;
+                }).length;
+                
+                const currentMonthTasks = completedTasks.length;
+                let growthPercent = 0;
+                if (prevMonthTasks > 0) {
+                    growthPercent = Math.round(((currentMonthTasks - prevMonthTasks) / prevMonthTasks) * 100);
+                } else if (currentMonthTasks > 0) {
+                    growthPercent = 100;
+                }
+                
+                // Update growth indicator
+                if (growthPercent >= 0) {
+                    growthIndicatorElement.textContent = `+${growthPercent}% from last month`;
+                    growthIndicatorElement.className = 'growth-indicator growth-positive';
+                } else {
+                    growthIndicatorElement.textContent = `${growthPercent}% from last month`;
+                    growthIndicatorElement.className = 'growth-indicator growth-negative';
+                }
+                
+                // Prepare chart data
+                const days = Array.from({length: daysInMonth}, (_, i) => i + 1);
+                
+                // Create gradient for the chart area
+                const gradient = dailyProgressChartCanvas.createLinearGradient(0, 0, 0, 300);
+                gradient.addColorStop(0, 'rgba(108, 99, 255, 0.3)');
+                gradient.addColorStop(1, 'rgba(108, 99, 255, 0)');
+                
+                // Create chart
+                dailyProgressChart = new Chart(dailyProgressChartCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: days,
+                        datasets: [{
+                            label: 'Tasks Completed',
+                            data: cumulativeData,
+                            borderColor: 'rgba(108, 99, 255, 1)',
+                            backgroundColor: gradient,
+                            borderWidth: 3,
+                            pointBackgroundColor: 'rgba(255, 255, 255, 1)',
+                            pointBorderColor: 'rgba(108, 99, 255, 1)',
+                            pointRadius: 5,
+                            pointHoverRadius: 7,
+                            fill: true,
+                            tension: 0.3,
+                            cubicInterpolationMode: 'monotone'
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: false
+                            },
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(108, 99, 255, 0.9)',
+                                titleFont: {
+                                    size: 14
+                                },
+                                bodyFont: {
+                                    size: 13
+                                },
+                                padding: 10,
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Total completed: ${context.parsed.y}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.05)'
+                                },
+                                ticks: {
+                                    stepSize: 1
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Cumulative Tasks Completed'
+                                }
+                            },
+                            x: {
+                                grid: {
+                                    color: 'rgba(0, 0, 0, 0.03)'
+                                },
+                                title: {
+                                    display: true,
+                                    text: 'Day of Month'
+                                }
+                            }
+                        },
+                        animation: {
+                            duration: 1200,
+                            easing: 'easeOutQuart'
+                        },
+                        interaction: {
+                            intersect: false,
+                            mode: 'index'
+                        }
+                    }
+                });
+            }
+            
+            // Initial setup
+            loadSavedColors();
+            renderTasks();
+            renderCharts();
+            
+            // Set up auto-save to sessionStorage on page unload
+            window.addEventListener('beforeunload', () => {
+                sessionStorage.setItem('studyTasks', JSON.stringify(tasks));
+            });
+        });
+    </script>
+</body>
+</html>
